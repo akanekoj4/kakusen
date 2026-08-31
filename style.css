@@ -26,3 +26,32 @@ button {
   font-size: 20px;
   font-weight: bold;
 }
+
+.players {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.player {
+  width: 420px;
+}
+
+.player canvas {
+  width: 400px;
+  height: 320px;
+}
+
+#battleButton {
+  margin-top: 30px;
+  padding: 15px 35px;
+  font-size: 20px;
+}
+
+#battleResult {
+  margin: 30px auto;
+  max-width: 900px;
+  font-size: 20px;
+  font-weight: bold;
+}

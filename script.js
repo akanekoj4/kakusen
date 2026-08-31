@@ -1,85 +1,214 @@
-const canvas = document.getElementById("drawingCanvas");
-const ctx = canvas.getContext("2d");
+let playerAData = null;
+let playerBData = null;
 
-const clearButton = document.getElementById("clearButton");
+function setupDrawing(
+  canvasId,
+  clearButtonId,
+  judgeButtonId,
+  resultId,
+  playerName
+) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext("2d");
 
-let drawing = false;
+  const clearButton = document.getElementById(clearButtonId);
+  const judgeButton = document.getElementById(judgeButtonId);
+  const result = document.getElementById(resultId);
 
-canvas.addEventListener("pointerdown", (event) => {
-  drawing = true;
+  let drawing = false;
 
-  ctx.beginPath();
-  ctx.moveTo(event.offsetX, event.offsetY);
-});
+  canvas.addEventListener("pointerdown", (event) => {
+    drawing = true;
 
-canvas.addEventListener("pointermove", (event) => {
-  if (!drawing) return;
+    ctx.beginPath();
+    ctx.moveTo(event.offsetX, event.offsetY);
+  });
 
-  ctx.lineWidth = 5;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "black";
+  canvas.addEventListener("pointermove", (event) => {
+    if (!drawing) return;
 
-  ctx.lineTo(event.offsetX, event.offsetY);
-  ctx.stroke();
-});
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "black";
 
-canvas.addEventListener("pointerup", () => {
-  drawing = false;
-});
+    ctx.lineTo(event.offsetX, event.offsetY);
+    ctx.stroke();
+  });
 
-canvas.addEventListener("pointerleave", () => {
-  drawing = false;
-});
+  canvas.addEventListener("pointerup", () => {
+    drawing = false;
+  });
 
-clearButton.addEventListener("click", () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
+  canvas.addEventListener("pointerleave", () => {
+    drawing = false;
+  });
 
-const judgeButton = document.getElementById("judgeButton");
-const result = document.getElementById("result");
+  clearButton.addEventListener("click", () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    result.textContent = "判定結果：---";
 
-judgeButton.addEventListener("click", async () => {
-  try {
-    result.textContent = "判定中...";
+    if (playerName === "A") {
+      playerAData = null;
+    }
 
-    // AI送信用の一時キャンバスを作る
-const sendCanvas = document.createElement("canvas");
-sendCanvas.width = canvas.width;
-sendCanvas.height = canvas.height;
+    if (playerName === "B") {
+      playerBData = null;
+    }
+  });
 
-const sendCtx = sendCanvas.getContext("2d");
+  judgeButton.addEventListener("click", async () => {
+    try {
+      result.textContent = "判定中...";
 
-// 背景を白くする
-sendCtx.fillStyle = "white";
-sendCtx.fillRect(0, 0, sendCanvas.width, sendCanvas.height);
+      // AI送信用キャンバス
+      const sendCanvas = document.createElement("canvas");
+      sendCanvas.width = canvas.width;
+      sendCanvas.height = canvas.height;
 
-// プレイヤーが描いた絵を上から重ねる
-sendCtx.drawImage(canvas, 0, 0);
+      const sendCtx = sendCanvas.getContext("2d");
 
-// 白背景付きPNGにする
-const imageData = sendCanvas.toDataURL("image/png");
+      // 背景を白にする
+      sendCtx.fillStyle = "white";
+      sendCtx.fillRect(
+        0,
+        0,
+        sendCanvas.width,
+        sendCanvas.height
+      );
 
-    const response = await fetch("/judge", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        image: imageData
-      })
-    });
+      // 描いた絵を重ねる
+      sendCtx.drawImage(canvas, 0, 0);
 
-    const data = await response.json();
+      // PNG画像に変換
+      const imageData =
+        sendCanvas.toDataURL("image/png");
 
-    if (!response.ok) {
-      result.textContent = data.error || "判定に失敗しました";
+      // AI判定
+      const response = await fetch("/judge", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          image: imageData
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        result.textContent =
+          data.error || "判定に失敗しました";
+        return;
+      }
+
+      result.textContent = data.result;
+
+      // AI判定結果を保存
+      if (playerName === "A") {
+        playerAData = data.result;
+      }
+
+      if (playerName === "B") {
+        playerBData = data.result;
+      }
+
+    } catch (error) {
+      console.error(error);
+      result.textContent =
+        "通信エラーが発生しました";
+    }
+  });
+
+  return canvas;
+}
+
+
+// PLAYER A
+const canvasA = setupDrawing(
+  "canvasA",
+  "clearA",
+  "judgeA",
+  "resultA",
+  "A"
+);
+
+
+// PLAYER B
+const canvasB = setupDrawing(
+  "canvasB",
+  "clearB",
+  "judgeB",
+  "resultB",
+  "B"
+);
+
+
+// -------------------------
+// バトル処理
+// -------------------------
+
+const battleButton =
+  document.getElementById("battleButton");
+
+const battleResult =
+  document.getElementById("battleResult");
+
+
+battleButton.addEventListener(
+  "click",
+  async () => {
+
+    // 両方AI判定しているか確認
+    if (!playerAData || !playerBData) {
+      battleResult.textContent =
+        "先にPLAYER AとPLAYER BをAI判定してください";
       return;
     }
 
-    result.textContent = data.result;
+    battleResult.textContent =
+      "バトル判定中...";
 
-  } catch (error) {
-    console.error(error);
-    result.textContent = "通信エラーが発生しました";
+    try {
+
+      const response = await fetch("/battle", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          playerA: playerAData,
+          playerB: playerBData,
+
+          // 今は仮で砂漠
+          field: "砂漠"
+        })
+      });
+
+
+      const data = await response.json();
+
+
+      if (!response.ok) {
+        battleResult.textContent =
+          data.error ||
+          "バトル判定に失敗しました";
+        return;
+      }
+
+
+      battleResult.textContent =
+        data.result;
+
+    } catch (error) {
+
+      console.error(error);
+
+      battleResult.textContent =
+        "通信エラーが発生しました";
+
+    }
   }
-});
+);

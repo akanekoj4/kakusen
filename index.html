@@ -10,18 +10,43 @@
 <body>
 
   <h1>描戦 -KAKUSEN-</h1>
-  <p>自由に絵を描いてみよう！</p>
+  <p>2人で絵を描いて戦わせよう！</p>
 
-  <canvas id="drawingCanvas" width="500" height="400"></canvas>
+  <div class="players">
 
-  <div>
-    <button id="clearButton">全部消す</button>
-    <button id="judgeButton">AIに判定してもらう</button>
+    <div class="player">
+      <h2>PLAYER A</h2>
+      <canvas id="canvasA" width="400" height="320"></canvas>
+
+      <div>
+        <button id="clearA">全部消す</button>
+        <button id="judgeA">AI判定</button>
+      </div>
+
+      <p id="resultA">判定結果：---</p>
+    </div>
+
+    <div class="player">
+      <h2>PLAYER B</h2>
+      <canvas id="canvasB" width="400" height="320"></canvas>
+
+      <div>
+        <button id="clearB">全部消す</button>
+        <button id="judgeB">AI判定</button>
+      </div>
+
+      <p id="resultB">判定結果：---</p>
+    </div>
+
   </div>
 
-  <p id="result">判定結果：---</p>
+  <button id="battleButton">バトル開始！</button>
+
+  <div id="battleResult">
+    勝敗：---
+  </div>
 
   <script src="script.js"></script>
+
 </body>
 </html>
-<!-- test -->
