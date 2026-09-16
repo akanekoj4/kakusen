@@ -8,6 +8,11 @@ const PORT = 3000;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static("."));
 
+
+// -------------------------
+// 画像判定
+// -------------------------
+
 app.post("/judge", async (req, res) => {
   try {
     const imageData = req.body.image;
@@ -18,21 +23,23 @@ app.post("/judge", async (req, res) => {
       });
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "google/gemma-4-26b-a4b-it:free",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: `
 この画像は、お絵描き対戦ゲームでプレイヤーが描いた絵です。
 
 プレイヤー本人が何を描いたつもりかは分かりません。
@@ -54,42 +61,53 @@ app.post("/judge", async (req, res) => {
 ・普通は戦わない物でも、見た目や性質から面白い戦い方を考えてください。
 ・強すぎる能力にはせず、必ず弱点も作ってください。
 `
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageData
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: imageData
+                  }
                 }
-              }
-            ]
-          }
-        ]
-      })
-    });
+              ]
+            }
+          ]
+        })
+      }
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error(data);
+      console.error("judge error:", data);
+
       return res.status(500).json({
         error: "AIの判定に失敗しました"
       });
     }
 
-    const result = data.choices?.[0]?.message?.content;
+    const result =
+      data.choices?.[0]?.message?.content;
 
     res.json({
-      result: result || "判定結果を取得できませんでした"
+      result:
+        result ||
+        "判定結果を取得できませんでした"
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("judge server error:", error);
 
     res.status(500).json({
       error: "サーバーでエラーが発生しました"
     });
   }
 });
+
+
+// -------------------------
+// バトル判定
+// -------------------------
+
 app.post("/battle", async (req, res) => {
   try {
     const { playerA, playerB, field } = req.body;
@@ -109,7 +127,7 @@ app.post("/battle", async (req, res) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "openrouter/free",
+          model: "google/gemma-4-26b-a4b-it:free",
           messages: [
             {
               role: "user",
@@ -137,7 +155,6 @@ ${playerB}
 ・戦い方
 
 と、
-
 フィールドとの相性を考えて、
 勝敗を決めてください。
 
@@ -169,6 +186,10 @@ ${playerB}
 
     const data = await response.json();
 
+    // ★ ここが今回追加した確認用ログ
+    console.log("=== BATTLE RESPONSE ===");
+    console.log(JSON.stringify(data, null, 2));
+
     if (!response.ok) {
       console.error("battle error:", data);
 
@@ -194,6 +215,14 @@ ${playerB}
     });
   }
 });
+
+
+// -------------------------
+// サーバー起動
+// -------------------------
+
 app.listen(PORT, () => {
-  console.log(`描戦サーバー起動: http://localhost:${PORT}`);
+  console.log(
+    `描戦サーバー起動: http://localhost:${PORT}`
+  );
 });
