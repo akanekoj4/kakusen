@@ -62,3 +62,16 @@ button {
   line-height: 1.8;
   text-align: left;
 }
+
+#battleResult {
+  white-space: pre-line;
+  line-height: 1.8;
+
+  max-width: 800px;
+  margin: 40px auto;
+
+  text-align: left;
+
+  font-size: 18px;
+  font-weight: normal;
+}

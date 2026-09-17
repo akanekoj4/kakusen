@@ -345,10 +345,8 @@ app.post("/battle", async (req, res) => {
     if (!playerA || !playerB) {
 
       return res.status(400).json({
-
         error:
           "PLAYER AまたはPLAYER Bの情報がありません"
-
       });
 
     }
@@ -368,21 +366,18 @@ app.post("/battle", async (req, res) => {
 
 
 【フィールド】
-
 ${field || "指定なし"}
 
 
 【PLAYER A】
-
 ${playerA}
 
 
 【PLAYER B】
-
 ${playerB}
 
 
-PLAYER AとPLAYER Bの
+2体の
 
 ・判定
 ・属性
@@ -390,46 +385,96 @@ PLAYER AとPLAYER Bの
 ・特殊能力
 ・弱点
 
-そして
+と、
 
 ・フィールドとの相性
 
 を考えて勝敗を決めてください。
 
 
-単純に
-「強そうな方」
-を勝たせないでください。
+【勝敗ルール】
 
-攻撃・特殊能力・弱点・フィールドの
-組み合わせを重視してください。
+・単純に強そうな方を勝たせない
 
-弱そうなキャラクターでも、
-相性が良ければ勝つことがあります。
+・攻撃、特殊能力、弱点、
+フィールドの相性を重視する
 
-ただし、
-無理やりすぎる結果にはしないでください。
+・弱そうなキャラクターでも
+相性次第で勝てる
 
+・フィールドを戦闘に活用する
 
-次の形式で日本語で答えてください。
+・無理やりな勝敗にはしない
 
-
-勝者：
-
-勝因：
-
-戦闘展開：
-
-1.
-2.
-3.
-4.
-
-意外だったポイント：
+・読んだ人が
+「なるほど！」
+と思える結果にする
 
 
-戦闘展開は
-3〜5ステップ程度にしてください。
+必ず以下のJSON形式だけで回答してください。
+
+
+{
+  "winner": "PLAYER A",
+  "winnerName": "キャラクター名",
+  "reason": "勝因",
+  "battle": [
+    "1つ目の展開",
+    "2つ目の展開",
+    "3つ目の展開",
+    "4つ目の展開"
+  ],
+  "surprise": "意外だったポイント"
+}
+
+
+【出力ルール】
+
+・JSON以外の文章を書かない
+
+・Markdownを使わない
+
+・winnerは必ず
+「PLAYER A」か「PLAYER B」
+
+・winnerNameには
+勝ったキャラクターの名前を書く
+
+・reasonは40文字以内を目安にする
+
+・battleは必ず4ステップ
+
+・battleの各ステップは
+35文字以内を目安にする
+
+・surpriseは50文字以内を目安にする
+
+・戦闘はテンポよくする
+
+・攻撃や特殊能力を
+実際に戦闘で使わせる
+
+・フィールドもできるだけ活用する
+
+・PLAYER AとPLAYER Bの
+設定に存在しない能力を
+勝手に追加しない
+
+
+出力例：
+
+{
+  "winner": "PLAYER A",
+  "winnerName": "リンゴモンスター",
+  "reason": "砂漠の強風が相手の弱点を突いた",
+  "battle": [
+    "花モンスターが花粉攻撃を放つ",
+    "砂漠の強風で花粉が吹き飛ぶ",
+    "リンゴモンスターが転がって接近",
+    "強烈な体当たりで勝負を決める"
+  ],
+  "surprise": "強力な花粉攻撃が砂漠では逆に弱点になった"
+}
 `
 
       }
@@ -441,9 +486,73 @@ PLAYER AとPLAYER Bの
       await askOpenRouter(messages);
 
 
+    console.log("バトルAIの元回答:");
+    console.log(ai.result);
+
+
+    const battle =
+      parseAIJson(ai.result);
+
+
+    if (!battle) {
+
+      return res.status(500).json({
+        error:
+          "バトル結果の形式が崩れました。もう一度試してください。"
+      });
+
+    }
+
+
+    if (
+      !battle.winner ||
+      !battle.winnerName ||
+      !battle.reason ||
+      !Array.isArray(battle.battle) ||
+      !battle.surprise
+    ) {
+
+      console.error(
+        "バトルデータ不足:",
+        battle
+      );
+
+      return res.status(500).json({
+        error:
+          "バトル結果のデータが不足しています。"
+      });
+
+    }
+
+
+    const steps =
+      battle.battle
+        .slice(0, 4)
+        .map((step, index) =>
+          `${index + 1}. ${step}`
+        )
+        .join("\n↓\n");
+
+
+    const displayResult =
+`🏆 WINNER：${battle.winner}
+${battle.winnerName}
+
+【勝因】
+${battle.reason}
+
+【BATTLE】
+${steps}
+
+【意外なポイント】
+${battle.surprise}`;
+
+
     res.json({
 
-      result: ai.result,
+      result: displayResult,
+
+      battle: battle,
 
       model: ai.model
 
