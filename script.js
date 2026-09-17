@@ -1,3 +1,24 @@
+
+// ===============================
+// フィールドをランダムに決定
+// ===============================
+
+const fields = [
+  "砂漠",
+  "海",
+  "雪原",
+  "森",
+  "火山",
+  "宇宙"
+];
+
+const selectedField =
+  fields[Math.floor(Math.random() * fields.length)];
+
+const fieldName =
+  document.getElementById("fieldName");
+
+fieldName.textContent = selectedField;
 let playerAData = null;
 let playerBData = null;
 
@@ -181,9 +202,7 @@ battleButton.addEventListener(
         body: JSON.stringify({
           playerA: playerAData,
           playerB: playerBData,
-
-          // 今は仮で砂漠
-          field: "砂漠"
+          field: "selectedField"
         })
       });
 

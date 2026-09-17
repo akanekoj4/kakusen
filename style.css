@@ -75,3 +75,19 @@ button {
   font-size: 18px;
   font-weight: normal;
 }
+
+#fieldArea {
+  margin: 30px auto;
+  text-align: center;
+}
+
+#fieldArea h2 {
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+#fieldName {
+  margin: 0;
+  font-size: 32px;
+  font-weight: bold;
+}
