@@ -55,3 +55,10 @@ button {
   font-size: 20px;
   font-weight: bold;
 }
+
+#resultA,
+#resultB {
+  white-space: pre-line;
+  line-height: 1.8;
+  text-align: left;
+}
